@@ -7,21 +7,45 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  ActivityIndicator, // 1. Import ActivityIndicator
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ENDPOINTS } from "../../api/Endpoints";
+import axios from "axios";
+import { COLORS } from "../../theme";
 
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("Student"); // State for toggle
+  const [role, setRole] = useState("student");
+  const [loading, setLoading] = useState(false); // 2. Create loading state
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!name || !email || !password) {
       alert("Please fill in all fields");
       return;
     }
-    console.log({ name, email, password, role });
+
+    setLoading(true); // 3. Start loading
+
+    try {
+      const response = await axios.post(ENDPOINTS.REGISTER, {
+        name,
+        email,
+        password,
+        role,
+      });
+      console.log("Registration successful:", response.data);
+      alert("Registration successful!");
+      navigation.navigate("Login"); 
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("An error occurred during registration. Please try again.");
+    } finally {
+      setLoading(false); 
+    }
   };
 
   return (
@@ -30,23 +54,24 @@ const RegisterScreen = ({ navigation }) => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <View style={styles.inner}>
-          <Text style={styles.title}>Register</Text>
-          <Text style={styles.subtitle}>Choose your role and get started</Text>
+        <ScrollView contentContainerStyle={styles.inner}>
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Start your learning journey today</Text>
 
-          {/* CUSTOM TOGGLE UI */}
+          {/* TOGGLE UI */}
           <View style={styles.toggleContainer}>
             <TouchableOpacity
               style={[
                 styles.toggleButton,
-                role === "Student" && styles.activeToggleButton,
+                role === "student" && styles.activeToggleButton,
               ]}
-              onPress={() => setRole("Student")}
+              onPress={() => setRole("student")}
+              disabled={loading} // Disable during loading
             >
               <Text
                 style={[
                   styles.toggleText,
-                  role === "Student" && styles.activeToggleText,
+                  role === "student" && styles.activeToggleText,
                 ]}
               >
                 Student
@@ -56,14 +81,15 @@ const RegisterScreen = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.toggleButton,
-                role === "Instructor" && styles.activeToggleButton,
+                role === "instructor" && styles.activeToggleButton,
               ]}
-              onPress={() => setRole("Instructor")}
+              onPress={() => setRole("instructor")}
+              disabled={loading} // Disable during loading
             >
               <Text
                 style={[
                   styles.toggleText,
-                  role === "Instructor" && styles.activeToggleText,
+                  role === "instructor" && styles.activeToggleText,
                 ]}
               >
                 Instructor
@@ -77,39 +103,56 @@ const RegisterScreen = ({ navigation }) => {
             style={styles.input}
             value={name}
             onChangeText={setName}
-            placeholderTextColor="#999"
+            placeholderTextColor={COLORS.placeholder}
+            editable={!loading} // Disable input while loading
           />
 
           <TextInput
             placeholder="Email Address"
+            style={styles.input}
             keyboardType="email-address"
             autoCapitalize="none"
-            style={styles.input}
             value={email}
             onChangeText={setEmail}
-            placeholderTextColor="#999"
+            placeholderTextColor={COLORS.placeholder}
+            editable={!loading}
           />
 
           <TextInput
             placeholder="Password"
-            secureTextEntry
             style={styles.input}
+            secureTextEntry
             value={password}
             onChangeText={setPassword}
-            placeholderTextColor="#999"
+            placeholderTextColor={COLORS.placeholder}
+            editable={!loading}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleRegister}>
-            <Text style={styles.buttonText}>Create Account</Text>
+          {/* PRIMARY BUTTON */}
+          <TouchableOpacity 
+            style={[styles.button, loading && { opacity: 0.7 }]} 
+            onPress={handleRegister}
+            disabled={loading} // Prevent multiple clicks
+          >
+            {loading ? (
+              <ActivityIndicator color={COLORS.surface} />
+            ) : (
+              <Text style={styles.buttonText}>Register Now</Text>
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <TouchableOpacity 
+             onPress={() => navigation.navigate("Login")}
+             disabled={loading}
+          >
             <Text style={styles.link}>
               Already have an account?{" "}
-              <Text style={{ fontWeight: "700" }}>Login</Text>
+              <Text style={{ fontWeight: "700", color: COLORS.secondary }}>
+                Login
+              </Text>
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -117,33 +160,35 @@ const RegisterScreen = ({ navigation }) => {
 
 export default RegisterScreen;
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: COLORS.background,
   },
   inner: {
     padding: 24,
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
   },
   title: {
     fontSize: 32,
     fontWeight: "800",
-    color: "#111",
+    color: COLORS.textPrimary,
     marginBottom: 5,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
+    color: COLORS.textSecondary,
     marginBottom: 30,
+    textAlign: "center",
   },
-  // TOGGLE STYLES
   toggleContainer: {
     flexDirection: "row",
-    backgroundColor: "#F0F0F0",
-    borderRadius: 12,
-    padding: 4,
+    backgroundColor: COLORS.toggleTrack,
+    borderRadius: 14,
+    padding: 5,
     marginBottom: 25,
   },
   toggleButton: {
@@ -153,55 +198,52 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   activeToggleButton: {
-    backgroundColor: "#FFFFFF",
-    // Adding a small shadow to the active state for a "popping" effect
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    backgroundColor: COLORS.surface,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   toggleText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#888",
+    color: COLORS.textSecondary,
   },
   activeToggleText: {
-    color: "#007AFF",
+    color: COLORS.primary,
   },
-  // FORM STYLES
   input: {
-    backgroundColor: "#F9F9F9",
-    borderWidth: 1,
-    borderColor: "#EEE",
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
     padding: 16,
     borderRadius: 12,
-    marginBottom: 15,
+    marginBottom: 16,
     fontSize: 16,
-    color: "#000",
+    color: COLORS.textPrimary,
   },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: COLORS.primary,
     padding: 18,
     borderRadius: 12,
     alignItems: "center",
     marginTop: 10,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
   },
   buttonText: {
-    color: "#fff",
+    color: COLORS.surface,
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 18,
   },
   link: {
     marginTop: 25,
     textAlign: "center",
-    color: "#007AFF",
+    color: COLORS.textSecondary,
     fontSize: 15,
   },
 });
