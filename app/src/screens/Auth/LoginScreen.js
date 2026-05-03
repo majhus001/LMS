@@ -39,10 +39,8 @@ const LoginScreen = ({ navigation }) => {
         navigation.replace("InstructorPanel");
       } else if (data.user.role === "student") {
         navigation.replace("StudentPanel");
-      } else if (data.user.role === "admin") {
-        navigation.replace("AdminPanel");
-      }
-
+      } 
+      
     } catch (error) {
       console.error("Login error:", error);
       const errorMessage =
