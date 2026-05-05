@@ -1,13 +1,31 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../theme";
+import { useNavigation } from "@react-navigation/native";
 
 const TabComponent = ({ activeTab, setActiveTab }) => {
+  const navigation = useNavigation();
   const tabs = [
-    { id: "mycourses", label: "My Courses", icon: "book" },
-    { id: "create", label: "Create", icon: "add-circle" },
-    { id: "profile", label: "Profile", icon: "person" },
+    {
+      id: "mycourses",
+      label: "My Courses",
+      icon: "book",
+      navigate: "InstructorPanel",
+    },
+    {
+      id: "createcourse",
+      label: "Create",
+      icon: "add-circle",
+      navigate: "CreateCourse",
+    },
+    { id: "profile", label: "Profile", icon: "person", navigate: "InstructorProfile" },
   ];
 
   return (
@@ -19,7 +37,10 @@ const TabComponent = ({ activeTab, setActiveTab }) => {
             <TouchableOpacity
               key={tab.id}
               style={[styles.tabButton, isActive && styles.activeTabButton]}
-              onPress={() => setActiveTab(tab.id)}
+              onPress={() => {
+                setActiveTab(tab.id);
+                navigation.navigate(tab.navigate);
+              }}
               activeOpacity={0.7}
             >
               <Ionicons
@@ -27,7 +48,9 @@ const TabComponent = ({ activeTab, setActiveTab }) => {
                 size={20}
                 color={isActive ? COLORS.primary : COLORS.textSecondary}
               />
-              <Text style={[styles.tabLabel, isActive && styles.activeTabLabel]}>
+              <Text
+                style={[styles.tabLabel, isActive && styles.activeTabLabel]}
+              >
                 {tab.label}
               </Text>
             </TouchableOpacity>
